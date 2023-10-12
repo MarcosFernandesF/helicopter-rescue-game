@@ -9,7 +9,7 @@ SDL_Renderer* renderer = NULL;
 
 int last_frame_time = 0;
 
-struct Battery {
+typedef struct {
     int id;
     int velocity;
     SDL_Rect layout;
@@ -58,12 +58,12 @@ void process_input() {
     }
 }
 
-void setup() {
-    Battery.velocity = 100;
-    Battery.layout.x = 100;
-    Battery.layout.y = 100;
-    Battery.layout.w = 80;
-    Battery.layout.h = 50;
+void setup(Battery *battery) {
+    battery->velocity = 100;
+    battery->layout.x = 100;
+    battery->layout.y = 100;
+    battery->layout.w = 80;
+    battery->layout.h = 50;
 }
 
 SDL_Rect setup_left_ground() {
@@ -99,28 +99,37 @@ SDL_Rect setup_bridge() {
 void update() {
     // Fator que será utilizado para calcular a mudança de pixels a cada segundo.
     // Utilizando esse fator não é preciso deduzir a mudança a cada frame.
-    float delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0f;
+    // float delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0f;
 
-    last_frame_time = SDL_GetTicks();
-
-    Battery.layout.x += Battery.velocity * delta_time;
-    Battery.layout.y += Battery.velocity * delta_time;
+    // last_frame_time = SDL_GetTicks();
 }
 
-void render(SDL_Rect left_ground, SDL_Rect right_ground, SDL_Rect bridge) {
-    // Colorindo o fundo da tela.
+void render_background() {
     SDL_SetRenderDrawColor(renderer, 135, 206, 250, 255);
     SDL_RenderClear(renderer);
+}
 
+void render_battery(Battery battery) {
     SDL_SetRenderDrawColor(renderer, 93, 120, 16, 255);
-    SDL_RenderFillRect(renderer, &Battery.layout);
+    SDL_RenderFillRect(renderer, &battery.layout);
+}
 
+void render_ground(SDL_Rect left_ground, SDL_Rect right_ground) {
     SDL_SetRenderDrawColor(renderer, 34, 139, 34, 255);
     SDL_RenderFillRect(renderer, &left_ground);
     SDL_RenderFillRect(renderer, &right_ground);
+}
+
+void render_bridge(SDL_Rect bridge) {
     SDL_SetRenderDrawColor(renderer, 139, 69, 19, 255);
     SDL_RenderFillRect(renderer, &bridge);
+}
 
+void render(Battery battery, SDL_Rect left_ground, SDL_Rect right_ground, SDL_Rect bridge) {
+    render_background();
+    render_battery(battery);
+    render_ground(right_ground, left_ground);
+    render_bridge(bridge);
     SDL_RenderPresent(renderer);
 }
 
@@ -133,7 +142,8 @@ void destroy_window() {
 int main () {
     game_is_running = initialize_window();
 
-    setup();
+    Battery battery_one;
+    setup(&battery_one);
 
     SDL_Rect left_ground = setup_left_ground();
     SDL_Rect right_ground = setup_right_ground();
@@ -142,7 +152,7 @@ int main () {
     while(game_is_running) {
         process_input();
         update();
-        render(left_ground, right_ground, bridge);
+        render(battery_one, left_ground, right_ground, bridge);
     }
 
     destroy_window();
