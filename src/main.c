@@ -58,40 +58,41 @@ void process_input() {
     }
 }
 
-void setup(Battery *battery) {
-    battery->velocity = 100;
-    battery->layout.x = 100;
-    battery->layout.y = 100;
-    battery->layout.w = 80;
-    battery->layout.h = 50;
+void setup_battery(Battery *battery) {
+    int x_position = battery->id == 1 ? BATTERY_X : BATTERY_X - 450;
+    battery->layout.x = x_position;
+    battery->layout.y = BATTERY_Y;
+    battery->layout.w = BATTERY_W;
+    battery->layout.h = BATTERY_H;
+    battery->velocity = BATTERY_VELOCITY;
 }
 
 SDL_Rect setup_left_ground() {
     SDL_Rect left_ground;
-    left_ground.x = 0;
-    left_ground.y = WINDOW_HEIGHT - 100;
-    left_ground.w = 400;
-    left_ground.h = 100;
+    left_ground.x = L_GROUND_X;
+    left_ground.y = L_GROUND_Y;
+    left_ground.w = L_GROUND_W;
+    left_ground.h = L_GROUND_H;
 
     return left_ground;
 }
 
 SDL_Rect setup_right_ground() {
     SDL_Rect right_ground;
-    right_ground.x = 550;
-    right_ground.y = WINDOW_HEIGHT - 100;
-    right_ground.w = 500;
-    right_ground.h = 200;
+    right_ground.x = R_GROUND_X;
+    right_ground.y = R_GROUND_Y;
+    right_ground.w = R_GROUND_W;
+    right_ground.h = R_GROUND_H;
 
     return right_ground;
 }
 
 SDL_Rect setup_bridge() {
     SDL_Rect bridge;
-    bridge.x = 375;
-    bridge.y = WINDOW_HEIGHT - 100;
-    bridge.w = 200;
-    bridge.h = 20;
+    bridge.x = BRIDGE_X;
+    bridge.y = BRIDGE_Y;
+    bridge.w = BRIDGE_W;
+    bridge.h = BRIDGE_H;
 
     return bridge;
 }
@@ -110,7 +111,7 @@ void render_background() {
 }
 
 void render_battery(Battery battery) {
-    SDL_SetRenderDrawColor(renderer, 93, 120, 16, 255);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_RenderFillRect(renderer, &battery.layout);
 }
 
@@ -125,9 +126,10 @@ void render_bridge(SDL_Rect bridge) {
     SDL_RenderFillRect(renderer, &bridge);
 }
 
-void render(Battery battery, SDL_Rect left_ground, SDL_Rect right_ground, SDL_Rect bridge) {
+void render(Battery battery_one, Battery battery_two, SDL_Rect left_ground, SDL_Rect right_ground, SDL_Rect bridge) {
     render_background();
-    render_battery(battery);
+    render_battery(battery_one);
+    render_battery(battery_two);
     render_ground(right_ground, left_ground);
     render_bridge(bridge);
     SDL_RenderPresent(renderer);
@@ -142,8 +144,11 @@ void destroy_window() {
 int main () {
     game_is_running = initialize_window();
 
-    Battery battery_one;
-    setup(&battery_one);
+    Battery battery_one, battery_two;
+    battery_one.id = 1;
+    battery_two.id = 2;
+    setup_battery(&battery_one);
+    setup_battery(&battery_two);
 
     SDL_Rect left_ground = setup_left_ground();
     SDL_Rect right_ground = setup_right_ground();
@@ -152,7 +157,7 @@ int main () {
     while(game_is_running) {
         process_input();
         update();
-        render(battery_one, left_ground, right_ground, bridge);
+        render(battery_one, battery_two, left_ground, right_ground, bridge);
     }
 
     destroy_window();
