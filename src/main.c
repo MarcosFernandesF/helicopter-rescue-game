@@ -97,6 +97,26 @@ SDL_Rect setup_bridge() {
     return bridge;
 }
 
+SDL_Rect setup_left_tower() {
+    SDL_Rect left_tower;
+    left_tower.x = L_TOWER_X;
+    left_tower.y = L_TOWER_Y;
+    left_tower.w = L_TOWER_W;
+    left_tower.h = L_TOWER_H;
+
+    return left_tower;
+}
+
+SDL_Rect setup_right_tower() {
+    SDL_Rect right_tower;
+    right_tower.x = R_TOWER_X;
+    right_tower.y = R_TOWER_Y;
+    right_tower.w = R_TOWER_W;
+    right_tower.h = R_TOWER_H;
+
+    return right_tower;
+}
+
 void update() {
     // Fator que será utilizado para calcular a mudança de pixels a cada segundo.
     // Utilizando esse fator não é preciso deduzir a mudança a cada frame.
@@ -111,7 +131,7 @@ void render_background() {
 }
 
 void render_battery(Battery battery) {
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_SetRenderDrawColor(renderer, 127, 127, 127, 255);
     SDL_RenderFillRect(renderer, &battery.layout);
 }
 
@@ -126,12 +146,20 @@ void render_bridge(SDL_Rect bridge) {
     SDL_RenderFillRect(renderer, &bridge);
 }
 
-void render(Battery battery_one, Battery battery_two, SDL_Rect left_ground, SDL_Rect right_ground, SDL_Rect bridge) {
+void render_towers(SDL_Rect left_tower, SDL_Rect right_tower) {
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderFillRect(renderer, &left_tower);
+    SDL_RenderFillRect(renderer, &right_tower);
+}
+
+void render(Battery battery_one, Battery battery_two, SDL_Rect left_ground, SDL_Rect right_ground,
+    SDL_Rect bridge, SDL_Rect left_tower, SDL_Rect right_tower) {
     render_background();
     render_battery(battery_one);
     render_battery(battery_two);
     render_ground(right_ground, left_ground);
     render_bridge(bridge);
+    render_towers(left_tower, right_tower);
     SDL_RenderPresent(renderer);
 }
 
@@ -153,11 +181,13 @@ int main () {
     SDL_Rect left_ground = setup_left_ground();
     SDL_Rect right_ground = setup_right_ground();
     SDL_Rect bridge = setup_bridge();
+    SDL_Rect left_tower = setup_left_tower();
+    SDL_Rect right_tower = setup_right_tower();
 
     while(game_is_running) {
         process_input();
         update();
-        render(battery_one, battery_two, left_ground, right_ground, bridge);
+        render(battery_one, battery_two, left_ground, right_ground, bridge, left_tower, right_tower);
     }
 
     destroy_window();

@@ -1,27 +1,37 @@
 #define FALSE 0
 #define TRUE 1
 
-#define WINDOW_WIDTH 1000
-#define WINDOW_HEIGHT 700
+#define WINDOW_WIDTH 1500
+#define WINDOW_HEIGHT 900
 
 #define BATTERY_VELOCITY 100
-#define BATTERY_X 700
-#define BATTERY_Y 550
+#define BATTERY_X 900
+#define BATTERY_Y R_GROUND_Y - 50
 #define BATTERY_W 80
 #define BATTERY_H 50
 
 #define L_GROUND_X 0
 #define L_GROUND_Y WINDOW_HEIGHT-100
-#define L_GROUND_W 400
+#define L_GROUND_W 600
 #define L_GROUND_H 100
 
-#define R_GROUND_X 550
+#define R_GROUND_X 850
 #define R_GROUND_Y WINDOW_HEIGHT-100
-#define R_GROUND_W 500
+#define R_GROUND_W WINDOW_WIDTH-R_GROUND_X
 #define R_GROUND_H 200
 
-#define BRIDGE_X 375
+#define BRIDGE_X L_GROUND_W
 #define BRIDGE_Y WINDOW_HEIGHT-100
-#define BRIDGE_W 200
+#define BRIDGE_W R_GROUND_X - L_GROUND_W
 #define BRIDGE_H 20
+
+#define L_TOWER_X 0
+#define L_TOWER_Y 200
+#define L_TOWER_W 250
+#define L_TOWER_H L_GROUND_Y - L_TOWER_Y
+
+#define R_TOWER_X WINDOW_WIDTH - 200
+#define R_TOWER_Y 200
+#define R_TOWER_W 200
+#define R_TOWER_H R_GROUND_Y - R_TOWER_Y
 
