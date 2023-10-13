@@ -1,5 +1,5 @@
 build:
-	gcc -Wall ./src/*.c -o game -lSDL2
+	gcc -Wall ./src/*.c -lSDL2 -o game
 run:
 	./game
 clean:
