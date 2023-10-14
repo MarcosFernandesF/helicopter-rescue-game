@@ -15,6 +15,14 @@ typedef struct {
     SDL_Rect layout;
 } Battery;
 
+typedef struct {
+    int id;
+    int velocity;
+    SDL_Rect layout;
+} Hostage;
+
+Hostage hostages[NUM_HOSTAGES];
+
 int initialize_window(void) {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
         fprintf(stderr, "Error initializing SDL.\n");
@@ -123,8 +131,6 @@ void process_input(SDL_Rect *helicopter) {
                 break;
         }
     }
-
-    SDL_Delay(10);
 }
 
 void setup_battery(Battery *battery) {
@@ -196,6 +202,14 @@ SDL_Rect setup_helicopter() {
     return helicopter;
 }
 
+void setup_hostage(Hostage *hostage, int id) {
+    hostage->id = id;
+    hostage->layout.x = HOSTAGE_X + (id * 25);
+    hostage->layout.y = HOSTAGE_Y;
+    hostage->layout.w = HOSTAGE_W;
+    hostage->layout.h = HOSTAGE_H;
+}
+
 void update() {
     // Fator que será utilizado para calcular a mudança de pixels a cada segundo.
     // Utilizando esse fator não é preciso deduzir a mudança a cada frame.
@@ -236,6 +250,17 @@ void render_helicopter(SDL_Rect helicopter) {
     SDL_RenderFillRect(renderer, &helicopter);
 }
 
+void render_hostage(Hostage hostage) {
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);  // Cor vermelha para reféns
+    SDL_RenderFillRect(renderer, &hostage.layout);
+}
+
+void render_hostages() {
+    for (int i = 0; i < NUM_HOSTAGES; ++i) {
+        render_hostage(hostages[i]);
+    }
+}
+
 void render(Battery battery_one, Battery battery_two, SDL_Rect left_ground, SDL_Rect right_ground,
     SDL_Rect bridge, SDL_Rect left_tower, SDL_Rect right_tower, SDL_Rect helicopter) {
     render_background();
@@ -245,6 +270,7 @@ void render(Battery battery_one, Battery battery_two, SDL_Rect left_ground, SDL_
     render_battery(battery_one);
     render_battery(battery_two);
     render_helicopter(helicopter);
+    render_hostages();
     SDL_RenderPresent(renderer);
 }
 
@@ -268,7 +294,11 @@ int main () {
     SDL_Rect bridge = setup_bridge();
     SDL_Rect left_tower = setup_left_tower();
     SDL_Rect right_tower = setup_right_tower();
-    SDL_Rect helicopter = setup_helicopter();    
+    SDL_Rect helicopter = setup_helicopter();
+
+    for (int i = 0; i < NUM_HOSTAGES; i++) {
+        setup_hostage(&hostages[i], i);
+    }
 
     while(game_is_running) {
         process_input(&helicopter);
