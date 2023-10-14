@@ -11,7 +11,28 @@ int is_delivered[NUM_HOSTAGES] = {FALSE};
 
 int last_frame_time = 0;
 
-typedef struct Battery{
+SDL_Rect left_ground;
+SDL_Rect right_ground;
+SDL_Rect bridge;
+SDL_Rect left_tower;
+SDL_Rect right_tower;
+SDL_Rect helicopter;
+
+SDL_Rect rescue_area_left = {
+        L_TOWER_X + 50,
+        L_TOWER_Y - 200,
+        L_TOWER_W,
+        200
+};
+
+SDL_Rect rescue_area_right = {
+        R_TOWER_X + 50,
+        R_TOWER_Y - 200,
+        R_TOWER_W,
+        200,
+};
+
+typedef struct {
     int id;
     int velocity;
     int capacity;
@@ -33,13 +54,6 @@ typedef struct {
 
 int is_hostage_captured = FALSE;
 Hostage hostages[NUM_HOSTAGES];
-
-SDL_Rect left_ground;
-SDL_Rect right_ground;
-SDL_Rect bridge;
-SDL_Rect left_tower;
-SDL_Rect right_tower;
-SDL_Rect helicopter;
 
 typedef struct {
     int active;
