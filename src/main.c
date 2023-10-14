@@ -43,19 +43,78 @@ int initialize_window(void) {
     return TRUE;
 }
 
-void process_input() {
-    SDL_Event event;
-    SDL_PollEvent(&event);
-
-    switch (event.type) {
-        case SDL_QUIT:
-            game_is_running = FALSE;
-            break;
-        case SDL_KEYDOWN:
-            if (event.key.keysym.sym == SDLK_ESCAPE)
-                game_is_running = FALSE;
-            break;
+void check_collision(SDL_Rect *helicopter, SDL_Rect *left_tower, SDL_Rect *right_tower) {
+    // Verifica colisão com o topo da tela
+    if (helicopter->y <= 0) {
+        game_is_running = FALSE;
+        printf("Game Over: Helicóptero colidiu com o topo da tela!\n");
     }
+
+    // Verifica colisão com esquerda da tela
+    if (helicopter->x <= 0) {
+        game_is_running = FALSE;
+        printf("Game Over: Helicóptero colidiu com o limite da tela!\n");
+    }
+
+    // Verifica colisão com direita da tela.
+    if ((helicopter->x + HELICOPTER_W) >= WINDOW_WIDTH) {
+        game_is_running = FALSE;
+        printf("Game Over: Helicóptero colidiu com o limite da tela!\n");
+    }
+
+    // Verificar colisão com a torre da esquerda
+    if (SDL_HasIntersection(helicopter, left_tower)) {
+        game_is_running = FALSE;
+        printf("Game Over: Helicóptero colidiu com a torre da esquerda!\n");
+    }
+
+    // Verificar colisão com a torre da direita
+    if (SDL_HasIntersection(helicopter, right_tower)) {
+        game_is_running = FALSE;
+        printf("Game Over: Helicóptero colidiu com a torre da direita!\n");
+    }
+}
+
+
+void move_helicopter(SDL_Rect *helicopter, SDL_Rect *left_tower, SDL_Rect *right_tower) {
+    const Uint8 *keyboardState = SDL_GetKeyboardState(NULL);
+
+    if (keyboardState[SDL_SCANCODE_LEFT]) {
+        helicopter->x -= HELICOPTER_VELOCITY;
+    }
+    if (keyboardState[SDL_SCANCODE_RIGHT]) {
+        helicopter->x += HELICOPTER_VELOCITY;
+    }
+    if (keyboardState[SDL_SCANCODE_UP]) {
+        helicopter->y -= HELICOPTER_VELOCITY;
+    }
+    if (keyboardState[SDL_SCANCODE_DOWN]) {
+        helicopter->y += HELICOPTER_VELOCITY;
+    }
+
+    check_collision(helicopter, left_tower, right_tower);
+}
+
+
+void process_input(SDL_Rect *helicopter) {
+    SDL_Event event;
+
+    while(SDL_PollEvent(&event)) {
+        switch (event.type) {
+            case SDL_QUIT:
+                game_is_running = FALSE;
+                break;
+            case SDL_KEYDOWN:
+                if (event.key.keysym.sym == SDLK_ESCAPE) {
+                    game_is_running = FALSE;
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    SDL_Delay(10);
 }
 
 void setup_battery(Battery *battery) {
@@ -117,6 +176,16 @@ SDL_Rect setup_right_tower() {
     return right_tower;
 }
 
+SDL_Rect setup_helicopter() {
+    SDL_Rect helicopter;
+    helicopter.x = HELICOPTER_X;
+    helicopter.y = HELICOPTER_Y;
+    helicopter.w = HELICOPTER_W;
+    helicopter.h = HELICOPTER_H;
+
+    return helicopter;
+}
+
 void update() {
     // Fator que será utilizado para calcular a mudança de pixels a cada segundo.
     // Utilizando esse fator não é preciso deduzir a mudança a cada frame.
@@ -147,19 +216,25 @@ void render_bridge(SDL_Rect bridge) {
 }
 
 void render_towers(SDL_Rect left_tower, SDL_Rect right_tower) {
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_SetRenderDrawColor(renderer, 102, 51, 0, 255);
     SDL_RenderFillRect(renderer, &left_tower);
     SDL_RenderFillRect(renderer, &right_tower);
 }
 
+void render_helicopter(SDL_Rect helicopter) {
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderFillRect(renderer, &helicopter);
+}
+
 void render(Battery battery_one, Battery battery_two, SDL_Rect left_ground, SDL_Rect right_ground,
-    SDL_Rect bridge, SDL_Rect left_tower, SDL_Rect right_tower) {
+    SDL_Rect bridge, SDL_Rect left_tower, SDL_Rect right_tower, SDL_Rect helicopter) {
     render_background();
     render_battery(battery_one);
     render_battery(battery_two);
     render_ground(right_ground, left_ground);
     render_bridge(bridge);
     render_towers(left_tower, right_tower);
+    render_helicopter(helicopter);
     SDL_RenderPresent(renderer);
 }
 
@@ -183,11 +258,13 @@ int main () {
     SDL_Rect bridge = setup_bridge();
     SDL_Rect left_tower = setup_left_tower();
     SDL_Rect right_tower = setup_right_tower();
+    SDL_Rect helicopter = setup_helicopter();    
 
     while(game_is_running) {
-        process_input();
+        process_input(&helicopter);
+        move_helicopter(&helicopter, &left_tower, &right_tower);
         update();
-        render(battery_one, battery_two, left_ground, right_ground, bridge, left_tower, right_tower);
+        render(battery_one, battery_two, left_ground, right_ground, bridge, left_tower, right_tower, helicopter);
     }
 
     destroy_window();
