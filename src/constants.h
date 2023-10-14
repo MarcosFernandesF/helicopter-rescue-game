@@ -41,3 +41,9 @@
 #define HELICOPTER_H 90
 #define HELICOPTER_VELOCITY 10
 
+#define NUM_HOSTAGES 10
+#define HOSTAGE_X L_TOWER_X
+#define HOSTAGE_Y L_TOWER_Y - 20
+#define HOSTAGE_W 10
+#define HOSTAGE_H 20
+
