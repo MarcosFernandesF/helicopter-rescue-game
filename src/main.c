@@ -104,7 +104,7 @@ void move_battery(Battery *battery) {
         battery->ammo = battery->maxCapacity;
         battery->needReload = FALSE;
         battery->velocity = -battery->velocity;
-        sleep(5);
+        sleep(battery->reloadTime);
         for (int i = 0; i < 4; i++) {
             battery->layout.x += battery->velocity;
             usleep(100000);
