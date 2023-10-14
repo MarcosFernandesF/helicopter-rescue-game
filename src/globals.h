@@ -1,5 +1,7 @@
 #include <SDL2/SDL.h>
 
+pthread_t batteryThreads[2];
+
 int game_is_running = FALSE;
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
@@ -9,9 +11,11 @@ int is_delivered[NUM_HOSTAGES] = {FALSE};
 
 int last_frame_time = 0;
 
-typedef struct {
+typedef struct Battery{
     int id;
     int velocity;
+    int capacity;
+    int reload_time;
     SDL_Rect layout;
 } Battery;
 

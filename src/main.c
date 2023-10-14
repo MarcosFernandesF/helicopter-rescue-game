@@ -1,8 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <SDL2/SDL.h>
+#include <time.h>
 #include "./constants.h"
 #include "./globals.h"
+#ifdef _WIN64
+#include "pthread.h"
+#include <windows.h>
+#else
+#include <pthread.h>
+#include <unistd.h>
+#endif
 
 int initialize_window(void) {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -44,7 +52,7 @@ void fire(Battery *battery) {
 }
 
 void move_battery(Battery *battery) {
-    // Atualiza a posição da bateria com base na sua velocidade
+
     battery->layout.x += battery->velocity;
 
     // Verifica se a bateria atingiu a borda direita ou esquerda
@@ -52,9 +60,11 @@ void move_battery(Battery *battery) {
         // Inverte a direção se atingiu a borda
         battery->velocity = -battery->velocity;
     }
-    if (rand() % 50 == 0) {  // Dispare aleatoriamente
-        fire(battery);
-    }
+
+    // // Atualiza a posição da bateria com base na sua velocidade
+    // if (rand() % 50 == 0) {  // Dispare aleatoriamente
+    //     fire(battery);
+    // }
 }
 
 void check_collision() {
@@ -173,13 +183,27 @@ void process_input() {
     }
 }
 
-void setup_battery(Battery *battery) {
+void *controlBattery(void *args) {
+    srand(time(NULL));
+    while (TRUE) {
+        if (rand() % 20 > 12) {
+            fire(args);
+        } else {
+            move_battery(args);
+        }
+        usleep(500000);
+    }
+}
+
+void setup_battery(Battery *battery, int id) {
+    battery->id = id+1;
     int x_position = battery->id == 1 ? BATTERY_X : BATTERY_X - 450;
     battery->layout.x = x_position;
     battery->layout.y = BATTERY_Y;
     battery->layout.w = BATTERY_W;
     battery->layout.h = BATTERY_H;
     battery->velocity = BATTERY_VELOCITY;
+    pthread_create(&batteryThreads[id], NULL, controlBattery, (void *) battery);
 }
 
 void setup_left_ground() {
@@ -356,27 +380,18 @@ void destroy_window() {
     SDL_Quit();
 }
 
-void *ptid1_func(void *args) {
-    printf("Thread1!\n");
-    pthread_exit(NULL);
-}
-
-void *ptid2_func(void *args) {
-    printf("Thread2!\n");
-    pthread_exit(NULL);
-}
 
 int main () {
     game_is_running = initialize_window();
 
-    pthread_create(&ptid1, NULL, ptid1_func, NULL);
-    pthread_create(&ptid2, NULL, ptid2_func, NULL);
+    for (int b = 0; b < 2; b++) {
+        if (b == 0) {
+            setup_battery(&battery_one, b);
+        } else {
+            setup_battery(&battery_two, b);
+        }
+    }
 
-    battery_one.id = 1;
-    battery_two.id = 2;
-
-    setup_battery(&battery_one);
-    setup_battery(&battery_two);
     setup_left_ground();
     setup_right_ground();
     setup_bridge();
@@ -390,8 +405,6 @@ int main () {
 
     while(game_is_running) {
         process_input();
-        move_battery(&battery_one);
-        move_battery(&battery_two);
         move_helicopter();
         update();
         render();
