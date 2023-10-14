@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 
-pthread_t batteryThreads[2];
+pthread_t batteryThreads[2], shotThread;
+
 
 int game_is_running = FALSE;
 SDL_Window* window = NULL;
@@ -11,12 +12,15 @@ int is_delivered[NUM_HOSTAGES] = {FALSE};
 
 int last_frame_time = 0;
 
+pthread_mutex_t bridgeMutex, storageMutex;
+
 SDL_Rect left_ground;
 SDL_Rect right_ground;
 SDL_Rect bridge;
 SDL_Rect left_tower;
 SDL_Rect right_tower;
 SDL_Rect helicopter;
+SDL_Rect storage;
 
 SDL_Rect rescue_area_left = {
         L_TOWER_X + 50,
@@ -35,8 +39,9 @@ SDL_Rect rescue_area_right = {
 typedef struct {
     int id;
     int velocity;
-    int capacity;
-    int reload_time;
+    int ammo;
+    int maxCapacity;
+    int reloadTime;
     SDL_Rect layout;
 } Battery;
 
