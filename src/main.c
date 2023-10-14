@@ -43,6 +43,17 @@ int initialize_window(void) {
     return TRUE;
 }
 
+void move_battery(Battery *battery) {
+    // Atualiza a posição da bateria com base na sua velocidade
+    battery->layout.x += battery->velocity;
+
+    // Verifica se a bateria atingiu a borda direita ou esquerda
+    if (battery->layout.x <= (L_TOWER_X + L_TOWER_W - 20) || (battery->layout.x + BATTERY_W) >= R_TOWER_X) {
+        // Inverte a direção se atingiu a borda
+        battery->velocity = -battery->velocity;
+    }
+}
+
 void check_collision(SDL_Rect *helicopter, SDL_Rect *left_tower, SDL_Rect *right_tower) {
     // Verifica colisão com o topo da tela
     if (helicopter->y <= 0) {
@@ -74,7 +85,6 @@ void check_collision(SDL_Rect *helicopter, SDL_Rect *left_tower, SDL_Rect *right
         printf("Game Over: Helicóptero colidiu com a torre da direita!\n");
     }
 }
-
 
 void move_helicopter(SDL_Rect *helicopter, SDL_Rect *left_tower, SDL_Rect *right_tower) {
     const Uint8 *keyboardState = SDL_GetKeyboardState(NULL);
@@ -229,11 +239,11 @@ void render_helicopter(SDL_Rect helicopter) {
 void render(Battery battery_one, Battery battery_two, SDL_Rect left_ground, SDL_Rect right_ground,
     SDL_Rect bridge, SDL_Rect left_tower, SDL_Rect right_tower, SDL_Rect helicopter) {
     render_background();
-    render_battery(battery_one);
-    render_battery(battery_two);
     render_ground(right_ground, left_ground);
     render_bridge(bridge);
     render_towers(left_tower, right_tower);
+    render_battery(battery_one);
+    render_battery(battery_two);
     render_helicopter(helicopter);
     SDL_RenderPresent(renderer);
 }
@@ -262,6 +272,8 @@ int main () {
 
     while(game_is_running) {
         process_input(&helicopter);
+        move_battery(&battery_one);
+        move_battery(&battery_two);
         move_helicopter(&helicopter, &left_tower, &right_tower);
         update();
         render(battery_one, battery_two, left_ground, right_ground, bridge, left_tower, right_tower, helicopter);
