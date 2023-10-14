@@ -4,7 +4,7 @@
 #define WINDOW_WIDTH 1500
 #define WINDOW_HEIGHT 900
 
-#define BATTERY_VELOCITY 100
+#define BATTERY_VELOCITY 10
 #define BATTERY_X 900
 #define BATTERY_Y R_GROUND_Y - 50
 #define BATTERY_W 80
@@ -35,3 +35,19 @@
 #define R_TOWER_W 200
 #define R_TOWER_H R_GROUND_Y - R_TOWER_Y
 
+#define HELICOPTER_X R_TOWER_X
+#define HELICOPTER_Y 50
+#define HELICOPTER_W 180
+#define HELICOPTER_H 90
+#define HELICOPTER_VELOCITY 10
+
+#define NUM_HOSTAGES 10
+#define HOSTAGE_X L_TOWER_X
+#define HOSTAGE_Y L_TOWER_Y - 20
+#define HOSTAGE_W 10
+#define HOSTAGE_H 20
+
+#define NUM_SHOTS 3
+#define SHOT_W 20
+#define SHOT_H 20
+#define SHOT_VELOCITY 10
