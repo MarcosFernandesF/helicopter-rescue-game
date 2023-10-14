@@ -71,6 +71,8 @@ void handle_exit_input() {
 
 /*-------------- Contra a bateria e os tiros --------------*/
 void move_battery(Battery *battery) {
+
+    
     if (battery->velocity > 0 && battery->layout.x <= BRIDGE_X-BATTERY_W) {
         if (battery->layout.x + battery->velocity > BRIDGE_X-BATTERY_W) {
             pthread_mutex_lock(&bridgeMutex);
@@ -92,43 +94,52 @@ void move_battery(Battery *battery) {
     }
 
     battery->layout.x += battery->velocity;
-    // Verifica se a bateria atingiu a borda direita ou esquerda
-    if (battery->layout.x <= (L_TOWER_X + L_TOWER_W - 20) || (battery->layout.x + BATTERY_W) >= R_TOWER_X) {
-        // Inverte a direção se atingiu a borda
+    // SE needReload = TRUE, a bateria vai recarregar no armazém e logo sairá.
+    if (battery->needReload==TRUE && battery->layout.x <= L_TOWER_X + L_TOWER_W - 20) {
+        pthread_mutex_lock(&storageMutex);
+        for (int i = 0; i < 3; i++) {
+            battery->layout.x += battery->velocity;
+            usleep(100000);
+        }
+        battery->ammo = battery->maxCapacity;
+        battery->needReload = FALSE;
         battery->velocity = -battery->velocity;
+        sleep(5);
+        for (int i = 0; i < 4; i++) {
+            battery->layout.x += battery->velocity;
+            usleep(100000);
+        }
+        pthread_mutex_unlock(&storageMutex);
+    } else {
+        // Verifica se a bateria atingiu a borda direita ou esquerda
+        if (battery->layout.x <= (L_TOWER_X + L_TOWER_W - 20) || (battery->layout.x + BATTERY_W) >= R_TOWER_X) {
+            // Inverte a direção se atingiu a borda
+            battery->velocity = -battery->velocity;
+        }
+
     }
-}
-
-
-
-void *updateShots(void *args) {
-    printf("currently updating shots!");
-}
-
-void recharge_ammo(Battery *battery) {
-    printf("Battery:%d EMPTY!\n", battery->id);
 }
 
 void fire(Battery *battery) {
     if (battery->ammo > 0) {
         battery->ammo -= 1;
-        
+        printf("%d\n", battery->ammo);
+        for (int i = 0; i < NUM_SHOTS; i++) {
+            if (!shots[i].active) {
+                shots[i].active = TRUE;
+                shots[i].layout.x = battery->layout.x + (BATTERY_W - SHOT_W) / 2;
+                shots[i].layout.y = battery->layout.y - SHOT_H;
+                break;
+            }
+        }
     } else {
-        recharge_ammo(battery);
+        battery->needReload = TRUE;
     }
-    // for (int i = 0; i < NUM_SHOTS; i++) {
-    //     if (!shots[i].active) {
-    //         shots[i].active = TRUE;
-    //         shots[i].layout.x = battery->layout.x + (BATTERY_W - SHOT_W) / 2;
-    //         shots[i].layout.y = battery->layout.y - SHOT_H;
-    //         break;
-    //     }
-    // }
 }
 void *controlBattery(void *args) {
     srand(time(NULL));
     while (TRUE) {
-        if (rand() % 20 > 12) {
+        if (rand() % 20 >= 18) {
             fire(args);
         } else {
             move_battery(args);
@@ -147,6 +158,7 @@ void setup_battery(Battery *battery, int id, int difficulty) {
     battery->layout.w = BATTERY_W;
     battery->layout.h = BATTERY_H;
     battery->velocity = BATTERY_VELOCITY;
+    battery-> needReload = FALSE;
     switch (difficulty) {
         case 0:
             battery->maxCapacity = 10;
@@ -238,37 +250,6 @@ void setup_shots() {
     }
 }
 
-void setup_game() {
-    int difficulty;
-    printf("Escolha uma dificuldade: 0 - Fácil, 1 - Médio, 2 - Difícil\n");
-    while (TRUE) {
-        scanf("%d", &difficulty);
-        if (difficulty < 0 || difficulty > 2) {
-            printf("Valor inválido!");
-        } else {
-            break;
-        }
-    }
-    for (int b = 0; b < 2; b++) {
-        if (b == 0) {
-            setup_battery(&battery_one, b, difficulty);
-        } else {
-            setup_battery(&battery_two, b, difficulty);
-        }
-    }
-    setup_storage();
-    setup_left_ground();
-    setup_right_ground();
-    setup_bridge();
-    setup_left_tower();
-    setup_right_tower();
-    setup_helicopter();
-    setup_shots();
-    for (int i = 0; i < NUM_HOSTAGES; i++) {
-        setup_hostage(&hostages[i], i);
-    }
-    pthread_create(&shotThread, NULL, updateShots, NULL);
-}
 /*---------------------------------------------------------*/
 
 /*----- Verifica se o refém foi capturado ou entregue -----*/
@@ -363,22 +344,25 @@ void move_helicopter() {
 /*---------------------------------------------------------*/
 
 /*------------------- Controla os tiros -------------------*/
-void move_shots() {
-    for (int i = 0; i < NUM_SHOTS; ++i) {
-        if (shots[i].active) {
-            shots[i].layout.y -= SHOT_VELOCITY;  // Movendo para cima (pode ajustar conforme necessário)
+void *move_shots(void *args) {
+    while (TRUE) {
+        for (int i = 0; i < NUM_SHOTS; ++i) {
+            if (shots[i].active) {
+                shots[i].layout.y -= SHOT_VELOCITY;  // Movendo para cima (pode ajustar conforme necessário)
 
-            // Verificar colisão com o helicóptero
-            if (SDL_HasIntersection(&shots[i].layout, &helicopter)) {
-                game_is_running = FALSE;
-                printf("Game Over: Helicóptero atingido por um tiro!\n");
-            }
+                // Verificar colisão com o helicóptero
+                if (SDL_HasIntersection(&shots[i].layout, &helicopter)) {
+                    game_is_running = FALSE;
+                    printf("Game Over: Helicóptero atingido por um tiro!\n");
+                }
 
-            // Verificar se o tiro saiu da tela
-            if (shots[i].layout.y < 0) {
-                shots[i].active = FALSE;
+                // Verificar se o tiro saiu da tela
+                if (shots[i].layout.y < 0) {
+                    shots[i].active = FALSE;
+                }
             }
         }
+        usleep(100000);
     }
 }
 
@@ -388,7 +372,6 @@ void update() {
     // float delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0f;
 
     // last_frame_time = SDL_GetTicks();
-    move_shots();
 }
 /*---------------------------------------------------------*/
 
@@ -478,6 +461,38 @@ void render() {
     render_shots();
     SDL_RenderPresent(renderer);
 }
+void setup_game() {
+    int difficulty;
+    printf("Escolha uma dificuldade: 0 - Fácil, 1 - Médio, 2 - Difícil\n");
+    while (TRUE) {
+        scanf("%d", &difficulty);
+        if (difficulty < 0 || difficulty > 2) {
+            printf("Valor inválido!");
+        } else {
+            break;
+        }
+    }
+    for (int b = 0; b < 2; b++) {
+        if (b == 0) {
+            setup_battery(&battery_one, b, difficulty);
+        } else {
+            setup_battery(&battery_two, b, difficulty);
+        }
+    }
+    setup_storage();
+    setup_left_ground();
+    setup_right_ground();
+    setup_bridge();
+    setup_left_tower();
+    setup_right_tower();
+    setup_helicopter();
+    setup_shots();
+    for (int i = 0; i < NUM_HOSTAGES; i++) {
+        setup_hostage(&hostages[i], i);
+    }
+    pthread_create(&shotThread, NULL, move_shots, NULL);
+}
+
 /*-------------------------------------------------------*/
 
 int main () {

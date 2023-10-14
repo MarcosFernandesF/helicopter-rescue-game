@@ -34,7 +34,7 @@
 #define STORAGE_W 250
 #define STORAGE_H 200
 
-#define BATTERY_VELOCITY 50
+#define BATTERY_VELOCITY 30
 #define BATTERY_X 900
 #define BATTERY_Y R_GROUND_Y - 50
 #define BATTERY_W 80
@@ -52,7 +52,7 @@
 #define HOSTAGE_W 10
 #define HOSTAGE_H 20
 
-#define NUM_SHOTS 3
+#define NUM_SHOTS 30
 #define SHOT_W 20
 #define SHOT_H 20
-#define SHOT_VELOCITY 10
+#define SHOT_VELOCITY 25
