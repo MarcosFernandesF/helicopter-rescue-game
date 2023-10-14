@@ -29,7 +29,12 @@
 #define R_TOWER_W 200
 #define R_TOWER_H R_GROUND_Y - R_TOWER_Y
 
-#define BATTERY_VELOCITY 10
+#define STORAGE_X 50
+#define STORAGE_Y 600
+#define STORAGE_W 250
+#define STORAGE_H 200
+
+#define BATTERY_VELOCITY 50
 #define BATTERY_X 900
 #define BATTERY_Y R_GROUND_Y - 50
 #define BATTERY_W 80

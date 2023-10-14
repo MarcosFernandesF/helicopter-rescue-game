@@ -71,9 +71,27 @@ void handle_exit_input() {
 
 /*-------------- Contra a bateria e os tiros --------------*/
 void move_battery(Battery *battery) {
+    if (battery->velocity > 0 && battery->layout.x <= BRIDGE_X-BATTERY_W) {
+        if (battery->layout.x + battery->velocity > BRIDGE_X-BATTERY_W) {
+            pthread_mutex_lock(&bridgeMutex);
+            while (battery->layout.x < BRIDGE_X + BRIDGE_W) {
+                battery->layout.x += battery->velocity;
+                usleep(100000);
+            }
+            pthread_mutex_unlock(&bridgeMutex);
+        }    
+    } else if (battery->velocity < 0 && battery->layout.x >= BRIDGE_X + BRIDGE_W){
+        if (battery->layout.x + battery->velocity < BRIDGE_X + BRIDGE_W) {
+            pthread_mutex_lock(&bridgeMutex);
+            while (battery->layout.x > BRIDGE_X - 80) {
+                battery->layout.x += battery->velocity;
+                usleep(100000);
+            }
+            pthread_mutex_unlock(&bridgeMutex);
+        }
+    }
 
     battery->layout.x += battery->velocity;
-
     // Verifica se a bateria atingiu a borda direita ou esquerda
     if (battery->layout.x <= (L_TOWER_X + L_TOWER_W - 20) || (battery->layout.x + BATTERY_W) >= R_TOWER_X) {
         // Inverte a direção se atingiu a borda
@@ -105,7 +123,7 @@ void *controlBattery(void *args) {
         } else {
             move_battery(args);
         }
-        usleep(500000);
+        usleep(100000);
     }
 }
 /*---------------------------------------------------------*/
@@ -120,6 +138,13 @@ void setup_battery(Battery *battery, int id) {
     battery->layout.h = BATTERY_H;
     battery->velocity = BATTERY_VELOCITY;
     pthread_create(&batteryThreads[id], NULL, controlBattery, (void *) battery);
+}
+
+void setup_storage() {
+    storage.x = STORAGE_X;
+    storage.y = STORAGE_Y;
+    storage.w = STORAGE_W;
+    storage.h = STORAGE_H;
 }
 
 void setup_left_ground() {
@@ -191,6 +216,7 @@ void setup_game() {
             setup_battery(&battery_two, b);
         }
     }
+    setup_storage();
     setup_left_ground();
     setup_right_ground();
     setup_bridge();
@@ -354,6 +380,11 @@ void render_towers() {
     SDL_RenderFillRect(renderer, &right_tower);
 }
 
+void render_storage() {
+    SDL_SetRenderDrawColor(renderer, 105, 105, 105, 255);
+    SDL_RenderFillRect(renderer, &storage);
+}
+
 void render_helicopter() {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderFillRect(renderer, &helicopter);
@@ -399,6 +430,7 @@ void render() {
     render_ground();
     render_bridge();
     render_towers();
+    render_storage();
     render_batterys();
     render_helicopter();
     render_hostages();
@@ -408,6 +440,10 @@ void render() {
 /*-------------------------------------------------------*/
 
 int main () {
+
+    pthread_mutex_init(&bridgeMutex, NULL);
+    pthread_mutex_init(&storageMutex, NULL);
+
     game_is_running = initialize_window();
 
     setup_game();
@@ -419,6 +455,9 @@ int main () {
         render();
     }
 
+
+    pthread_mutex_init(&storageMutex, NULL);
+    pthread_mutex_init(&bridgeMutex, NULL);
     destroy_window();
 
     return 0;
