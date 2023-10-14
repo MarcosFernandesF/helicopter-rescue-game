@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 
-pthread_t batteryThreads[2];
+pthread_t batteryThreads[2], shotThread;
+
 
 int game_is_running = FALSE;
 SDL_Window* window = NULL;
@@ -40,7 +41,7 @@ typedef struct {
     int velocity;
     int ammo;
     int maxCapacity;
-    int reload_time;
+    int reloadTime;
     SDL_Rect layout;
 } Battery;
 

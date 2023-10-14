@@ -97,24 +97,34 @@ void move_battery(Battery *battery) {
         // Inverte a direção se atingiu a borda
         battery->velocity = -battery->velocity;
     }
+}
 
-    // // Atualiza a posição da bateria com base na sua velocidade
-    // if (rand() % 50 == 0) {  // Dispare aleatoriamente
-    //     fire(battery);
-    // }
+
+
+void *updateShots(void *args) {
+    printf("currently updating shots!");
+}
+
+void recharge_ammo(Battery *battery) {
+    printf("Battery:%d EMPTY!\n", battery->id);
 }
 
 void fire(Battery *battery) {
-    for (int i = 0; i < NUM_SHOTS; ++i) {
-        if (!shots[i].active) {
-            shots[i].active = TRUE;
-            shots[i].layout.x = battery->layout.x + (BATTERY_W - SHOT_W) / 2;
-            shots[i].layout.y = battery->layout.y - SHOT_H;
-            break;
-        }
+    if (battery->ammo > 0) {
+        battery->ammo -= 1;
+        
+    } else {
+        recharge_ammo(battery);
     }
+    // for (int i = 0; i < NUM_SHOTS; i++) {
+    //     if (!shots[i].active) {
+    //         shots[i].active = TRUE;
+    //         shots[i].layout.x = battery->layout.x + (BATTERY_W - SHOT_W) / 2;
+    //         shots[i].layout.y = battery->layout.y - SHOT_H;
+    //         break;
+    //     }
+    // }
 }
-
 void *controlBattery(void *args) {
     srand(time(NULL));
     while (TRUE) {
@@ -129,7 +139,7 @@ void *controlBattery(void *args) {
 /*---------------------------------------------------------*/
 
 /*---------------- Configuração do cenário ----------------*/
-void setup_battery(Battery *battery, int id) {
+void setup_battery(Battery *battery, int id, int difficulty) {
     battery->id = id+1;
     int x_position = battery->id == 1 ? BATTERY_X : BATTERY_X - 450;
     battery->layout.x = x_position;
@@ -137,6 +147,26 @@ void setup_battery(Battery *battery, int id) {
     battery->layout.w = BATTERY_W;
     battery->layout.h = BATTERY_H;
     battery->velocity = BATTERY_VELOCITY;
+    switch (difficulty) {
+        case 0:
+            battery->maxCapacity = 10;
+            battery->ammo = 10;
+            battery->reloadTime = 5;
+            break;
+        case 1:
+            battery->maxCapacity = 15;
+            battery->ammo = 15;
+            battery->reloadTime = 3;
+            break;
+        case 2:
+            battery->maxCapacity = 20;
+            battery->ammo = 20;
+            battery->reloadTime = 1;
+            break;
+        default:
+            printf("err");
+            break;
+    }
     pthread_create(&batteryThreads[id], NULL, controlBattery, (void *) battery);
 }
 
@@ -209,11 +239,21 @@ void setup_shots() {
 }
 
 void setup_game() {
+    int difficulty;
+    printf("Escolha uma dificuldade: 0 - Fácil, 1 - Médio, 2 - Difícil\n");
+    while (TRUE) {
+        scanf("%d", &difficulty);
+        if (difficulty < 0 || difficulty > 2) {
+            printf("Valor inválido!");
+        } else {
+            break;
+        }
+    }
     for (int b = 0; b < 2; b++) {
         if (b == 0) {
-            setup_battery(&battery_one, b);
+            setup_battery(&battery_one, b, difficulty);
         } else {
-            setup_battery(&battery_two, b);
+            setup_battery(&battery_two, b, difficulty);
         }
     }
     setup_storage();
@@ -227,6 +267,7 @@ void setup_game() {
     for (int i = 0; i < NUM_HOSTAGES; i++) {
         setup_hostage(&hostages[i], i);
     }
+    pthread_create(&shotThread, NULL, updateShots, NULL);
 }
 /*---------------------------------------------------------*/
 
