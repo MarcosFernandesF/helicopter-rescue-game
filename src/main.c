@@ -2,12 +2,17 @@
 #include <stdlib.h>
 #include <SDL2/SDL.h>
 #include "./constants.h"
+#include "pthread.h"
 
 int game_is_running = FALSE;
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
+pthread_t ptid1, ptid2;
+
 
 int last_frame_time = 0;
+
+
 
 typedef struct {
     int id;
@@ -22,17 +27,17 @@ int initialize_window(void) {
     };
 
     window = SDL_CreateWindow(
-        NULL,
+        "Helicopter Game",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
         WINDOW_WIDTH,
         WINDOW_HEIGHT,
-        SDL_WINDOW_BORDERLESS
+        SDL_WINDOW_SHOWN
     );
 
     if (!window) {
         fprintf(stderr, "Error creating SDL Window.\n");
-        return 0;
+        return FALSE;
     }
 
     renderer = SDL_CreateRenderer(window, -1, 0);
@@ -169,8 +174,21 @@ void destroy_window() {
     SDL_Quit();
 }
 
+void *ptid1_func(void *args) {
+    printf("Thread1!\n");
+    pthread_exit(NULL);
+}
+
+void *ptid2_func(void *args) {
+    printf("Thread2!\n");
+    pthread_exit(NULL);
+}
+
 int main () {
     game_is_running = initialize_window();
+
+    pthread_create(&ptid1, NULL, ptid1_func, NULL);
+    pthread_create(&ptid2, NULL, ptid2_func, NULL);
 
     Battery battery_one, battery_two;
     battery_one.id = 1;
