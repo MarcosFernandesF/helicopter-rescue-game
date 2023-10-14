@@ -47,3 +47,7 @@
 #define HOSTAGE_W 10
 #define HOSTAGE_H 20
 
+#define NUM_SHOTS 3
+#define SHOT_W 20
+#define SHOT_H 20
+#define SHOT_VELOCITY 10
