@@ -12,6 +12,7 @@
 #include <unistd.h>
 #endif
 
+/*------------------ Configuração do SDL ------------------*/
 int initialize_window(void) {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
         fprintf(stderr, "Error initializing SDL.\n");
@@ -40,131 +41,15 @@ int initialize_window(void) {
     return TRUE;
 }
 
-void fire(Battery *battery) {
-    for (int i = 0; i < NUM_SHOTS; ++i) {
-        if (!shots[i].active) {
-            shots[i].active = TRUE;
-            shots[i].layout.x = battery->layout.x + (BATTERY_W - SHOT_W) / 2;
-            shots[i].layout.y = battery->layout.y - SHOT_H;
-            break;
-        }
-    }
+void destroy_window() {
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 }
+/*---------------------------------------------------------*/
 
-void move_battery(Battery *battery) {
-
-    battery->layout.x += battery->velocity;
-
-    // Verifica se a bateria atingiu a borda direita ou esquerda
-    if (battery->layout.x <= (L_TOWER_X + L_TOWER_W - 20) || (battery->layout.x + BATTERY_W) >= R_TOWER_X) {
-        // Inverte a direção se atingiu a borda
-        battery->velocity = -battery->velocity;
-    }
-
-    // // Atualiza a posição da bateria com base na sua velocidade
-    // if (rand() % 50 == 0) {  // Dispare aleatoriamente
-    //     fire(battery);
-    // }
-}
-
-void check_collision() {
-    // Verifica colisão com o topo da tela
-    if (helicopter.y <= 0) {
-        game_is_running = FALSE;
-        printf("Game Over: Helicóptero colidiu com o topo da tela!\n");
-    }
-
-    // Verifica colisão com esquerda da tela
-    if (helicopter.x <= 0) {
-        game_is_running = FALSE;
-        printf("Game Over: Helicóptero colidiu com o limite da tela!\n");
-    }
-
-    // Verifica colisão com direita da tela.
-    if ((helicopter.x + HELICOPTER_W) >= WINDOW_WIDTH) {
-        game_is_running = FALSE;
-        printf("Game Over: Helicóptero colidiu com o limite da tela!\n");
-    }
-
-    // Verificar colisão com a torre da esquerda
-    if (SDL_HasIntersection(&helicopter, &left_tower)) {
-        game_is_running = FALSE;
-        printf("Game Over: Helicóptero colidiu com a torre da esquerda!\n");
-    }
-
-    // Verificar colisão com a torre da direita
-    if (SDL_HasIntersection(&helicopter, &right_tower)) {
-        game_is_running = FALSE;
-        printf("Game Over: Helicóptero colidiu com a torre da direita!\n");
-    }
-
-    SDL_Rect rescue_area_left = {
-        L_TOWER_X + 50,
-        L_TOWER_Y - 200,
-        L_TOWER_W,
-        200
-    };
-
-    SDL_Rect rescue_area_right = {
-        R_TOWER_X + 50,
-        R_TOWER_Y - 200,
-        R_TOWER_W,
-        200,
-    };
-
-    // Verifique se o helicóptero está na área acima da torre da esquerda e pegue um refém
-    if (SDL_HasIntersection(&helicopter, &rescue_area_left)) {
-        if (!is_hostage_captured)
-        {    
-            for (int i = 0; i < NUM_HOSTAGES; ++i) {
-                if (!is_captured[i]) {
-                    printf("Refém %d capturado!\n", i);
-                    is_captured[i] = TRUE;
-                    hostages[i].current_tower = 1;  // Defina a torre atual do refém como a torre da esquerda
-                    is_hostage_captured = TRUE;
-                    break;
-                }
-            }
-        }
-    }
-
-    // Se o helicóptero está na área acima da torre da direita e está carregando um refém, libere-o
-    if (SDL_HasIntersection(&helicopter, &rescue_area_right)) {
-        if (is_hostage_captured)
-        {
-            for (int i = 0; i < NUM_HOSTAGES; ++i) {
-                if (is_captured[i] && !is_delivered[i]) {
-                    printf("Refém %d entregue com sucesso na torre da direita!\n", i);
-                    is_delivered[i] = TRUE;
-                    hostages[i].current_tower = 2;  // Defina a torre atual do refém como a torre da esquerda
-                    is_hostage_captured = FALSE;
-                    break;
-                }
-            }
-        }
-    }
-}
-
-void move_helicopter() {
-    const Uint8 *keyboardState = SDL_GetKeyboardState(NULL);
-
-    if (keyboardState[SDL_SCANCODE_LEFT]) {
-        helicopter.x -= HELICOPTER_VELOCITY;
-    }
-    if (keyboardState[SDL_SCANCODE_RIGHT]) {
-        helicopter.x += HELICOPTER_VELOCITY;
-    }
-    if (keyboardState[SDL_SCANCODE_UP]) {
-        helicopter.y -= HELICOPTER_VELOCITY;
-    }
-    if (keyboardState[SDL_SCANCODE_DOWN]) {
-        helicopter.y += HELICOPTER_VELOCITY;
-    }
-
-    check_collision(helicopter, left_tower, right_tower);
-}
-
-void process_input() {
+/*-------- Verifica se o usuário quer sair do jogo --------*/
+void handle_exit_input() {
     SDL_Event event;
 
     while(SDL_PollEvent(&event)) {
@@ -182,6 +67,35 @@ void process_input() {
         }
     }
 }
+/*---------------------------------------------------------*/
+
+/*-------------- Contra a bateria e os tiros --------------*/
+void move_battery(Battery *battery) {
+
+    battery->layout.x += battery->velocity;
+
+    // Verifica se a bateria atingiu a borda direita ou esquerda
+    if (battery->layout.x <= (L_TOWER_X + L_TOWER_W - 20) || (battery->layout.x + BATTERY_W) >= R_TOWER_X) {
+        // Inverte a direção se atingiu a borda
+        battery->velocity = -battery->velocity;
+    }
+
+    // // Atualiza a posição da bateria com base na sua velocidade
+    // if (rand() % 50 == 0) {  // Dispare aleatoriamente
+    //     fire(battery);
+    // }
+}
+
+void fire(Battery *battery) {
+    for (int i = 0; i < NUM_SHOTS; ++i) {
+        if (!shots[i].active) {
+            shots[i].active = TRUE;
+            shots[i].layout.x = battery->layout.x + (BATTERY_W - SHOT_W) / 2;
+            shots[i].layout.y = battery->layout.y - SHOT_H;
+            break;
+        }
+    }
+}
 
 void *controlBattery(void *args) {
     srand(time(NULL));
@@ -194,7 +108,9 @@ void *controlBattery(void *args) {
         usleep(500000);
     }
 }
+/*---------------------------------------------------------*/
 
+/*---------------- Configuração do cenário ----------------*/
 void setup_battery(Battery *battery, int id) {
     battery->id = id+1;
     int x_position = battery->id == 1 ? BATTERY_X : BATTERY_X - 450;
@@ -267,6 +183,119 @@ void setup_shots() {
     }
 }
 
+void setup_game() {
+    for (int b = 0; b < 2; b++) {
+        if (b == 0) {
+            setup_battery(&battery_one, b);
+        } else {
+            setup_battery(&battery_two, b);
+        }
+    }
+    setup_left_ground();
+    setup_right_ground();
+    setup_bridge();
+    setup_left_tower();
+    setup_right_tower();
+    setup_helicopter();
+    setup_shots();
+    for (int i = 0; i < NUM_HOSTAGES; i++) {
+        setup_hostage(&hostages[i], i);
+    }
+}
+/*---------------------------------------------------------*/
+
+/*----- Verifica se o refém foi capturado ou entregue -----*/
+void check_hostage_situation() {
+    // Verifique se o helicóptero está na área acima da torre da esquerda e pegue um refém
+    if (SDL_HasIntersection(&helicopter, &rescue_area_left)) {
+        if (!is_hostage_captured)
+        {    
+            for (int i = 0; i < NUM_HOSTAGES; ++i) {
+                if (!is_captured[i]) {
+                    printf("Refém %d capturado!\n", i);
+                    is_captured[i] = TRUE;
+                    hostages[i].current_tower = 1;  // Defina a torre atual do refém como a torre da esquerda
+                    is_hostage_captured = TRUE;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Se o helicóptero está na área acima da torre da direita e está carregando um refém, libere-o
+    if (SDL_HasIntersection(&helicopter, &rescue_area_right)) {
+        if (is_hostage_captured)
+        {
+            for (int i = 0; i < NUM_HOSTAGES; ++i) {
+                if (is_captured[i] && !is_delivered[i]) {
+                    printf("Refém %d entregue com sucesso na torre da direita!\n", i);
+                    is_delivered[i] = TRUE;
+                    hostages[i].current_tower = 2;  // Defina a torre atual do refém como a torre da esquerda
+                    is_hostage_captured = FALSE;
+                    break;
+                }
+            }
+        }
+    }
+}
+/*---------------------------------------------------------*/
+
+/*------- Movimenta o Helicoptero e checa colisões --------*/
+void check_collision() {
+    // Verifica colisão com o topo da tela
+    if (helicopter.y <= 0) {
+        game_is_running = FALSE;
+        printf("Game Over: Helicóptero colidiu com o topo da tela!\n");
+    }
+
+    // Verifica colisão com esquerda da tela
+    if (helicopter.x <= 0) {
+        game_is_running = FALSE;
+        printf("Game Over: Helicóptero colidiu com o limite da tela!\n");
+    }
+
+    // Verifica colisão com direita da tela.
+    if ((helicopter.x + HELICOPTER_W) >= WINDOW_WIDTH) {
+        game_is_running = FALSE;
+        printf("Game Over: Helicóptero colidiu com o limite da tela!\n");
+    }
+
+    // Verificar colisão com a torre da esquerda
+    if (SDL_HasIntersection(&helicopter, &left_tower)) {
+        game_is_running = FALSE;
+        printf("Game Over: Helicóptero colidiu com a torre da esquerda!\n");
+    }
+
+    // Verificar colisão com a torre da direita
+    if (SDL_HasIntersection(&helicopter, &right_tower)) {
+        game_is_running = FALSE;
+        printf("Game Over: Helicóptero colidiu com a torre da direita!\n");
+    }
+
+    check_hostage_situation();
+}
+
+void move_helicopter() {
+    const Uint8 *keyboardState = SDL_GetKeyboardState(NULL);
+
+    if (keyboardState[SDL_SCANCODE_LEFT]) {
+        helicopter.x -= HELICOPTER_VELOCITY;
+    }
+    if (keyboardState[SDL_SCANCODE_RIGHT]) {
+        helicopter.x += HELICOPTER_VELOCITY;
+    }
+    if (keyboardState[SDL_SCANCODE_UP]) {
+        helicopter.y -= HELICOPTER_VELOCITY;
+    }
+    if (keyboardState[SDL_SCANCODE_DOWN]) {
+        helicopter.y += HELICOPTER_VELOCITY;
+    }
+
+    check_collision(helicopter, left_tower, right_tower);
+}
+/*---------------------------------------------------------*/
+
+/*------------------- Controla os tiros -------------------*/
 void move_shots() {
     for (int i = 0; i < NUM_SHOTS; ++i) {
         if (shots[i].active) {
@@ -294,7 +323,9 @@ void update() {
     // last_frame_time = SDL_GetTicks();
     move_shots();
 }
+/*---------------------------------------------------------*/
 
+/*---------------- Renderização do cenário ----------------*/
 void render_background() {
     SDL_SetRenderDrawColor(renderer, 135, 206, 250, 255);
     SDL_RenderClear(renderer);
@@ -363,6 +394,7 @@ void render_shots() {
 }
 
 void render() {
+
     render_background();
     render_ground();
     render_bridge();
@@ -373,38 +405,15 @@ void render() {
     render_shots();
     SDL_RenderPresent(renderer);
 }
-
-void destroy_window() {
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-}
-
+/*-------------------------------------------------------*/
 
 int main () {
     game_is_running = initialize_window();
 
-    for (int b = 0; b < 2; b++) {
-        if (b == 0) {
-            setup_battery(&battery_one, b);
-        } else {
-            setup_battery(&battery_two, b);
-        }
-    }
-
-    setup_left_ground();
-    setup_right_ground();
-    setup_bridge();
-    setup_left_tower();
-    setup_right_tower();
-    setup_helicopter();
-    setup_shots();
-    for (int i = 0; i < NUM_HOSTAGES; i++) {
-        setup_hostage(&hostages[i], i);
-    }
+    setup_game();
 
     while(game_is_running) {
-        process_input();
+        handle_exit_input();
         move_helicopter();
         update();
         render();

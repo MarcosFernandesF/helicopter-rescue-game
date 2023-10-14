@@ -4,12 +4,6 @@
 #define WINDOW_WIDTH 1500
 #define WINDOW_HEIGHT 900
 
-#define BATTERY_VELOCITY 10
-#define BATTERY_X 900
-#define BATTERY_Y R_GROUND_Y - 50
-#define BATTERY_W 80
-#define BATTERY_H 50
-
 #define L_GROUND_X 0
 #define L_GROUND_Y WINDOW_HEIGHT-100
 #define L_GROUND_W 600
@@ -34,6 +28,12 @@
 #define R_TOWER_Y 200
 #define R_TOWER_W 200
 #define R_TOWER_H R_GROUND_Y - R_TOWER_Y
+
+#define BATTERY_VELOCITY 10
+#define BATTERY_X 900
+#define BATTERY_Y R_GROUND_Y - 50
+#define BATTERY_W 80
+#define BATTERY_H 50
 
 #define HELICOPTER_X R_TOWER_X
 #define HELICOPTER_Y 50
