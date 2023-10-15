@@ -257,7 +257,7 @@ void check_hostage_situation() {
         {    
             for (int i = 0; i < NUM_HOSTAGES; ++i) {
                 if (!is_captured[i]) {
-                    printf("Refém %d capturado!\n", i+1);
+                    printf("Refém %d capturado!\n", i);
                     is_captured[i] = TRUE;
                     hostages[i].current_tower = 1;  // Defina a torre atual do refém como a torre da esquerda
                     is_hostage_captured = TRUE;
