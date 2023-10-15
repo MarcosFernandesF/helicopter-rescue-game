@@ -121,7 +121,6 @@ void move_battery(Battery *battery) {
 void fire(Battery *battery) {
     if (battery->ammo > 0) {
         battery->ammo -= 1;
-        printf("%d\n", battery->ammo);
         for (int i = 0; i < NUM_SHOTS; i++) {
             if (!shots[i].active) {
                 shots[i].active = TRUE;
@@ -258,7 +257,7 @@ void check_hostage_situation() {
         {    
             for (int i = 0; i < NUM_HOSTAGES; ++i) {
                 if (!is_captured[i]) {
-                    printf("Refém %d capturado!\n", i);
+                    printf("Refém %d capturado!\n", i+1);
                     is_captured[i] = TRUE;
                     hostages[i].current_tower = 1;  // Defina a torre atual do refém como a torre da esquerda
                     is_hostage_captured = TRUE;
@@ -274,7 +273,7 @@ void check_hostage_situation() {
         {
             for (int i = 0; i < NUM_HOSTAGES; ++i) {
                 if (is_captured[i] && !is_delivered[i]) {
-                    printf("Refém %d entregue com sucesso na torre da direita!\n", i);
+                    printf("Refém %d entregue com sucesso na torre da direita!\n", i+1);
                     is_delivered[i] = TRUE;
                     hostages[i].current_tower = 2;  // Defina a torre atual do refém como a torre da esquerda
                     is_hostage_captured = FALSE;
