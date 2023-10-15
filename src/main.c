@@ -71,47 +71,83 @@ void handle_exit_input() {
 
 /*-------------- Contra a bateria e os tiros --------------*/
 void move_battery(Battery *battery) {
-
-    battery->layout.x += battery->velocity;
-
-    // Verifica se a bateria atingiu a borda direita ou esquerda
-    if (battery->layout.x <= (L_TOWER_X + L_TOWER_W - 20) || (battery->layout.x + BATTERY_W) >= R_TOWER_X) {
-        // Inverte a direção se atingiu a borda
-        battery->velocity = -battery->velocity;
+    if (battery->velocity > 0 && battery->layout.x <= BRIDGE_X-BATTERY_W) {
+        if (battery->layout.x + battery->velocity > BRIDGE_X-BATTERY_W) {
+            pthread_mutex_lock(&bridgeMutex);
+            while (battery->layout.x < BRIDGE_X + BRIDGE_W) {
+                battery->layout.x += battery->velocity;
+                SDL_Delay(100);
+            }
+            pthread_mutex_unlock(&bridgeMutex);
+        }    
+    } else if (battery->velocity < 0 && battery->layout.x >= BRIDGE_X + BRIDGE_W){
+        if (battery->layout.x + battery->velocity < BRIDGE_X + BRIDGE_W) {
+            pthread_mutex_lock(&bridgeMutex);
+            while (battery->layout.x > BRIDGE_X - 80) {
+                battery->layout.x += battery->velocity;
+                SDL_Delay(100);
+            }
+            pthread_mutex_unlock(&bridgeMutex);
+        }
     }
 
-    // // Atualiza a posição da bateria com base na sua velocidade
-    // if (rand() % 50 == 0) {  // Dispare aleatoriamente
-    //     fire(battery);
-    // }
+    battery->layout.x += battery->velocity;
+    // SE needReload = TRUE, a bateria vai recarregar no armazém e logo sairá.
+    if (battery->needReload==TRUE && battery->layout.x <= L_TOWER_X + L_TOWER_W - 20) {
+        pthread_mutex_lock(&storageMutex);
+        for (int i = 0; i < 3; i++) {
+            battery->layout.x += battery->velocity;
+            SDL_Delay(100);
+        }
+        battery->ammo = battery->maxCapacity;
+        battery->needReload = FALSE;
+        battery->velocity = -battery->velocity;
+        SDL_Delay(battery->reloadTime*1000);
+        for (int i = 0; i < 4; i++) {
+            battery->layout.x += battery->velocity;
+            SDL_Delay(100);
+        }
+        pthread_mutex_unlock(&storageMutex);
+    } else {
+        // Verifica se a bateria atingiu a borda direita ou esquerda
+        if (battery->layout.x <= (L_TOWER_X + L_TOWER_W - 20) || (battery->layout.x + BATTERY_W) >= R_TOWER_X) {
+            // Inverte a direção se atingiu a borda
+            battery->velocity = -battery->velocity;
+        }
+
+    }
 }
 
 void fire(Battery *battery) {
-    for (int i = 0; i < NUM_SHOTS; ++i) {
-        if (!shots[i].active) {
-            shots[i].active = TRUE;
-            shots[i].layout.x = battery->layout.x + (BATTERY_W - SHOT_W) / 2;
-            shots[i].layout.y = battery->layout.y - SHOT_H;
-            break;
+    if (battery->ammo > 0) {
+        battery->ammo -= 1;
+        for (int i = 0; i < NUM_SHOTS; i++) {
+            if (!shots[i].active) {
+                shots[i].active = TRUE;
+                shots[i].layout.x = battery->layout.x + (BATTERY_W - SHOT_W) / 2;
+                shots[i].layout.y = battery->layout.y - SHOT_H;
+                break;
+            }
         }
+    } else {
+        battery->needReload = TRUE;
     }
 }
-
 void *controlBattery(void *args) {
     srand(time(NULL));
     while (TRUE) {
-        if (rand() % 20 > 12) {
+        if (rand() % 20 >= 18) {
             fire(args);
         } else {
             move_battery(args);
         }
-        usleep(500000);
+        SDL_Delay(100);
     }
 }
 /*---------------------------------------------------------*/
 
 /*---------------- Configuração do cenário ----------------*/
-void setup_battery(Battery *battery, int id) {
+void setup_battery(Battery *battery, int id, int difficulty) {
     battery->id = id+1;
     int x_position = battery->id == 1 ? BATTERY_X : BATTERY_X - 450;
     battery->layout.x = x_position;
@@ -119,7 +155,35 @@ void setup_battery(Battery *battery, int id) {
     battery->layout.w = BATTERY_W;
     battery->layout.h = BATTERY_H;
     battery->velocity = BATTERY_VELOCITY;
+    battery-> needReload = FALSE;
+    switch (difficulty) {
+        case 0:
+            battery->maxCapacity = 10;
+            battery->ammo = 10;
+            battery->reloadTime = 5;
+            break;
+        case 1:
+            battery->maxCapacity = 15;
+            battery->ammo = 15;
+            battery->reloadTime = 3;
+            break;
+        case 2:
+            battery->maxCapacity = 20;
+            battery->ammo = 20;
+            battery->reloadTime = 1;
+            break;
+        default:
+            printf("err");
+            break;
+    }
     pthread_create(&batteryThreads[id], NULL, controlBattery, (void *) battery);
+}
+
+void setup_storage() {
+    storage.x = STORAGE_X;
+    storage.y = STORAGE_Y;
+    storage.w = STORAGE_W;
+    storage.h = STORAGE_H;
 }
 
 void setup_left_ground() {
@@ -183,25 +247,6 @@ void setup_shots() {
     }
 }
 
-void setup_game() {
-    for (int b = 0; b < 2; b++) {
-        if (b == 0) {
-            setup_battery(&battery_one, b);
-        } else {
-            setup_battery(&battery_two, b);
-        }
-    }
-    setup_left_ground();
-    setup_right_ground();
-    setup_bridge();
-    setup_left_tower();
-    setup_right_tower();
-    setup_helicopter();
-    setup_shots();
-    for (int i = 0; i < NUM_HOSTAGES; i++) {
-        setup_hostage(&hostages[i], i);
-    }
-}
 /*---------------------------------------------------------*/
 
 /*----- Verifica se o refém foi capturado ou entregue -----*/
@@ -228,10 +273,15 @@ void check_hostage_situation() {
         {
             for (int i = 0; i < NUM_HOSTAGES; ++i) {
                 if (is_captured[i] && !is_delivered[i]) {
-                    printf("Refém %d entregue com sucesso na torre da direita!\n", i);
+                    printf("Refém %d entregue com sucesso na torre da direita!\n", i+1);
                     is_delivered[i] = TRUE;
                     hostages[i].current_tower = 2;  // Defina a torre atual do refém como a torre da esquerda
                     is_hostage_captured = FALSE;
+                    // Se o último refem foi entregue finaliza o jogo
+                    if (i == (NUM_HOSTAGES - 1)) {
+                        printf("Parabéns, você resgatou todos os reféns!\n");
+                        game_is_running = FALSE;
+                    }
                     break;
                 }
             }
@@ -296,22 +346,25 @@ void move_helicopter() {
 /*---------------------------------------------------------*/
 
 /*------------------- Controla os tiros -------------------*/
-void move_shots() {
-    for (int i = 0; i < NUM_SHOTS; ++i) {
-        if (shots[i].active) {
-            shots[i].layout.y -= SHOT_VELOCITY;  // Movendo para cima (pode ajustar conforme necessário)
+void *move_shots(void *args) {
+    while (TRUE) {
+        for (int i = 0; i < NUM_SHOTS; ++i) {
+            if (shots[i].active) {
+                shots[i].layout.y -= SHOT_VELOCITY;  // Movendo para cima (pode ajustar conforme necessário)
 
-            // Verificar colisão com o helicóptero
-            if (SDL_HasIntersection(&shots[i].layout, &helicopter)) {
-                game_is_running = FALSE;
-                printf("Game Over: Helicóptero atingido por um tiro!\n");
-            }
+                // Verificar colisão com o helicóptero
+                if (SDL_HasIntersection(&shots[i].layout, &helicopter)) {
+                    game_is_running = FALSE;
+                    printf("Game Over: Helicóptero atingido por um tiro!\n");
+                }
 
-            // Verificar se o tiro saiu da tela
-            if (shots[i].layout.y < 0) {
-                shots[i].active = FALSE;
+                // Verificar se o tiro saiu da tela
+                if (shots[i].layout.y < 0) {
+                    shots[i].active = FALSE;
+                }
             }
         }
+        SDL_Delay(100);
     }
 }
 
@@ -321,7 +374,6 @@ void update() {
     // float delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0f;
 
     // last_frame_time = SDL_GetTicks();
-    move_shots();
 }
 /*---------------------------------------------------------*/
 
@@ -352,6 +404,11 @@ void render_towers() {
     SDL_SetRenderDrawColor(renderer, 102, 51, 0, 255);
     SDL_RenderFillRect(renderer, &left_tower);
     SDL_RenderFillRect(renderer, &right_tower);
+}
+
+void render_storage() {
+    SDL_SetRenderDrawColor(renderer, 105, 105, 105, 255);
+    SDL_RenderFillRect(renderer, &storage);
 }
 
 void render_helicopter() {
@@ -399,15 +456,52 @@ void render() {
     render_ground();
     render_bridge();
     render_towers();
+    render_storage();
     render_batterys();
     render_helicopter();
     render_hostages();
     render_shots();
     SDL_RenderPresent(renderer);
 }
+void setup_game() {
+    int difficulty;
+    printf("Escolha uma dificuldade: 0 - Fácil, 1 - Médio, 2 - Difícil\n");
+    while (TRUE) {
+        scanf("%d", &difficulty);
+        if (difficulty < 0 || difficulty > 2) {
+            printf("Valor inválido!");
+        } else {
+            break;
+        }
+    }
+    for (int b = 0; b < 2; b++) {
+        if (b == 0) {
+            setup_battery(&battery_one, b, difficulty);
+        } else {
+            setup_battery(&battery_two, b, difficulty);
+        }
+    }
+    setup_storage();
+    setup_left_ground();
+    setup_right_ground();
+    setup_bridge();
+    setup_left_tower();
+    setup_right_tower();
+    setup_helicopter();
+    setup_shots();
+    for (int i = 0; i < NUM_HOSTAGES; i++) {
+        setup_hostage(&hostages[i], i);
+    }
+    pthread_create(&shotThread, NULL, move_shots, NULL);
+}
+
 /*-------------------------------------------------------*/
 
 int main () {
+
+    pthread_mutex_init(&bridgeMutex, NULL);
+    pthread_mutex_init(&storageMutex, NULL);
+
     game_is_running = initialize_window();
 
     setup_game();
@@ -419,6 +513,9 @@ int main () {
         render();
     }
 
+
+    pthread_mutex_init(&storageMutex, NULL);
+    pthread_mutex_init(&bridgeMutex, NULL);
     destroy_window();
 
     return 0;

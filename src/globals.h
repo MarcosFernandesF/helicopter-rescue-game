@@ -42,6 +42,7 @@ typedef struct {
     int ammo;
     int maxCapacity;
     int reloadTime;
+    int needReload;
     SDL_Rect layout;
 } Battery;
 

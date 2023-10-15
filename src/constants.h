@@ -24,17 +24,17 @@
 #define L_TOWER_W 250
 #define L_TOWER_H L_GROUND_Y - L_TOWER_Y
 
-#define R_TOWER_X WINDOW_WIDTH - 200
+#define R_TOWER_X WINDOW_WIDTH - 250
 #define R_TOWER_Y 200
-#define R_TOWER_W 200
+#define R_TOWER_W 250
 #define R_TOWER_H R_GROUND_Y - R_TOWER_Y
 
-#define STORAGE_X 20
-#define STORAGE_Y 500
+#define STORAGE_X 50
+#define STORAGE_Y 600
 #define STORAGE_W 250
 #define STORAGE_H 200
 
-#define BATTERY_VELOCITY 50
+#define BATTERY_VELOCITY 30
 #define BATTERY_X 900
 #define BATTERY_Y R_GROUND_Y - 50
 #define BATTERY_W 80
@@ -52,7 +52,7 @@
 #define HOSTAGE_W 10
 #define HOSTAGE_H 20
 
-#define NUM_SHOTS 3
+#define NUM_SHOTS 30
 #define SHOT_W 20
 #define SHOT_H 20
-#define SHOT_VELOCITY 10
+#define SHOT_VELOCITY 25
