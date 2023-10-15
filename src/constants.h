@@ -24,9 +24,9 @@
 #define L_TOWER_W 250
 #define L_TOWER_H L_GROUND_Y - L_TOWER_Y
 
-#define R_TOWER_X WINDOW_WIDTH - 200
+#define R_TOWER_X WINDOW_WIDTH - 250
 #define R_TOWER_Y 200
-#define R_TOWER_W 200
+#define R_TOWER_W 250
 #define R_TOWER_H R_GROUND_Y - R_TOWER_Y
 
 #define STORAGE_X 50

@@ -71,8 +71,6 @@ void handle_exit_input() {
 
 /*-------------- Contra a bateria e os tiros --------------*/
 void move_battery(Battery *battery) {
-
-    
     if (battery->velocity > 0 && battery->layout.x <= BRIDGE_X-BATTERY_W) {
         if (battery->layout.x + battery->velocity > BRIDGE_X-BATTERY_W) {
             pthread_mutex_lock(&bridgeMutex);
@@ -280,6 +278,11 @@ void check_hostage_situation() {
                     is_delivered[i] = TRUE;
                     hostages[i].current_tower = 2;  // Defina a torre atual do refém como a torre da esquerda
                     is_hostage_captured = FALSE;
+                    // Se o último refem foi entregue finaliza o jogo
+                    if (i == (NUM_HOSTAGES - 1)) {
+                        printf("Parabéns, você resgatou todos os reféns!\n");
+                        game_is_running = FALSE;
+                    }
                     break;
                 }
             }
