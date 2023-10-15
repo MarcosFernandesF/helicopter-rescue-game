@@ -76,7 +76,7 @@ void move_battery(Battery *battery) {
             pthread_mutex_lock(&bridgeMutex);
             while (battery->layout.x < BRIDGE_X + BRIDGE_W) {
                 battery->layout.x += battery->velocity;
-                usleep(100000);
+                SDL_Delay(100);
             }
             pthread_mutex_unlock(&bridgeMutex);
         }    
@@ -85,7 +85,7 @@ void move_battery(Battery *battery) {
             pthread_mutex_lock(&bridgeMutex);
             while (battery->layout.x > BRIDGE_X - 80) {
                 battery->layout.x += battery->velocity;
-                usleep(100000);
+                SDL_Delay(100);
             }
             pthread_mutex_unlock(&bridgeMutex);
         }
@@ -97,15 +97,15 @@ void move_battery(Battery *battery) {
         pthread_mutex_lock(&storageMutex);
         for (int i = 0; i < 3; i++) {
             battery->layout.x += battery->velocity;
-            usleep(100000);
+            SDL_Delay(100);
         }
         battery->ammo = battery->maxCapacity;
         battery->needReload = FALSE;
         battery->velocity = -battery->velocity;
-        sleep(battery->reloadTime);
+        SDL_Delay(battery->reloadTime*1000);
         for (int i = 0; i < 4; i++) {
             battery->layout.x += battery->velocity;
-            usleep(100000);
+            SDL_Delay(100);
         }
         pthread_mutex_unlock(&storageMutex);
     } else {
@@ -142,7 +142,7 @@ void *controlBattery(void *args) {
         } else {
             move_battery(args);
         }
-        usleep(100000);
+        SDL_Delay(100);
     }
 }
 /*---------------------------------------------------------*/
@@ -365,7 +365,7 @@ void *move_shots(void *args) {
                 }
             }
         }
-        usleep(100000);
+        SDL_Delay(100);
     }
 }
 
